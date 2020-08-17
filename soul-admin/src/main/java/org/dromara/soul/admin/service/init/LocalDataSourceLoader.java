@@ -17,6 +17,11 @@
 
 package org.dromara.soul.admin.service.init;
 
+import java.io.Reader;
+import java.nio.charset.StandardCharsets;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import lombok.SneakyThrows;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.ibatis.io.Resources;
 import org.apache.ibatis.jdbc.ScriptRunner;
@@ -25,12 +30,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.InstantiationAwareBeanPostProcessor;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
-
-import java.io.Reader;
-import java.nio.charset.StandardCharsets;
-import java.sql.Connection;
-import java.sql.DriverManager;
 
 /**
  * for execute schema sql file.
@@ -39,35 +40,30 @@ import java.sql.DriverManager;
  */
 @Component
 public class LocalDataSourceLoader implements InstantiationAwareBeanPostProcessor {
-
+    
     private static final Logger LOGGER = LoggerFactory.getLogger(LocalDataSourceLoader.class);
-
+    
     private static final String SCHEMA_SQL_FILE = "META-INF/schema.sql";
-
+    
     @Override
-    public Object postProcessAfterInitialization(final Object bean, final String beanName) throws BeansException {
+    public Object postProcessAfterInitialization(@NonNull final Object bean, final String beanName) throws BeansException {
         if (bean instanceof DataSourceProperties) {
             this.init((DataSourceProperties) bean);
         }
         return bean;
     }
-
+    
+    @SneakyThrows
     protected void init(final DataSourceProperties properties) {
         // If jdbcUrl in the configuration file specifies the soul database, it is removed,
         // because the soul database does not need to be specified when executing the SQL file,
         // otherwise the soul database will be disconnected when the soul database does not exist
-        String jdbcUrl = properties.getUrl();
-        jdbcUrl = StringUtils.replace(jdbcUrl, "/soul?", "?");
-
-        try {
-            Connection connection = DriverManager.getConnection(jdbcUrl, properties.getUsername(), properties.getPassword());
-            this.execute(connection);
-        } catch (Exception e) {
-            LOGGER.info(e.getMessage());
-        }
-
+        String jdbcUrl = StringUtils.replace(properties.getUrl(), "/soul?", "?");
+        Connection connection = DriverManager.getConnection(jdbcUrl, properties.getUsername(), properties.getPassword());
+        this.execute(connection);
+        
     }
-
+    
     private void execute(final Connection conn) throws Exception {
         ScriptRunner runner = new ScriptRunner(conn);
         // doesn't print logger
@@ -79,5 +75,5 @@ public class LocalDataSourceLoader implements InstantiationAwareBeanPostProcesso
         runner.closeConnection();
         conn.close();
     }
-
+    
 }

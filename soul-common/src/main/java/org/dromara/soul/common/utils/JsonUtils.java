@@ -80,12 +80,12 @@ public final class JsonUtils {
      * @param object the object
      * @return the string
      */
-    public static String toJson(Object object) {
+    public static String toJson(final Object object) {
         try {
             return mapper.writeValueAsString(object);
         } catch (IOException e) {
             logger.warn("write to json string error:" + object, e);
-            return null;
+            return "{}";
         }
     }
 
@@ -95,7 +95,7 @@ public final class JsonUtils {
      * @param object the object
      * @return the object
      */
-    public static Object removeClass(Object object) {
+    public static Object removeClass(final Object object) {
         if (object instanceof Map) {
             Map map = (Map) object;
             Object result = map.get("result");
@@ -109,6 +109,5 @@ public final class JsonUtils {
             return object;
         }
     }
-
 
 }

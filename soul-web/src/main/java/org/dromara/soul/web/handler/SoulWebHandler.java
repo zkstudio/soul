@@ -18,16 +18,20 @@
 
 package org.dromara.soul.web.handler;
 
-import org.dromara.soul.web.plugin.SoulPlugin;
-import org.dromara.soul.web.plugin.SoulPluginChain;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import org.dromara.soul.metrics.api.HistogramMetricsTrackerDelegate;
+import org.dromara.soul.metrics.enums.MetricsLabelEnum;
+import org.dromara.soul.metrics.facade.MetricsTrackerFacade;
+import org.dromara.soul.plugin.api.SoulPlugin;
+import org.dromara.soul.plugin.api.SoulPluginChain;
+import org.springframework.lang.NonNull;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebHandler;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Scheduler;
 import reactor.core.scheduler.Schedulers;
-
-import java.util.List;
-import java.util.Objects;
 
 /**
  * this is web handler request starter.
@@ -35,11 +39,11 @@ import java.util.Objects;
  * @author xiaoyu(Myth)
  */
 public final class SoulWebHandler implements WebHandler {
-
+    
     private List<SoulPlugin> plugins;
-
+    
     private Scheduler scheduler;
-
+    
     /**
      * Instantiates a new Soul web handler.
      *
@@ -50,15 +54,13 @@ public final class SoulWebHandler implements WebHandler {
         String schedulerType = System.getProperty("soul.scheduler.type", "fixed");
         if (Objects.equals(schedulerType, "fixed")) {
             int threads = Integer.parseInt(System.getProperty(
-                    "soul.work.threads",
-                    "" + Math.max((Runtime.getRuntime()
-                            .availableProcessors() << 1) + 1, 16)));
+                    "soul.work.threads", "" + Math.max((Runtime.getRuntime().availableProcessors() << 1) + 1, 16)));
             scheduler = Schedulers.newParallel("soul-work-threads", threads);
         } else {
             scheduler = Schedulers.elastic();
         }
     }
-
+    
     /**
      * Handle the web server exchange.
      *
@@ -66,17 +68,19 @@ public final class SoulWebHandler implements WebHandler {
      * @return {@code Mono<Void>} to indicate when request handling is complete
      */
     @Override
-    public Mono<Void> handle(final ServerWebExchange exchange) {
-        return new DefaultSoulPluginChain(plugins)
-                .execute(exchange).subscribeOn(scheduler);
+    public Mono<Void> handle(@NonNull final ServerWebExchange exchange) {
+        MetricsTrackerFacade.getInstance().counterInc(MetricsLabelEnum.REQUEST_TOTAL.getName());
+        Optional<HistogramMetricsTrackerDelegate> startTimer = MetricsTrackerFacade.getInstance().histogramStartTimer(MetricsLabelEnum.REQUEST_LATENCY.getName());
+        return new DefaultSoulPluginChain(plugins).execute(exchange).subscribeOn(scheduler)
+                .doOnSuccess(t -> startTimer.ifPresent(time -> MetricsTrackerFacade.getInstance().histogramObserveDuration(time)));
     }
-
+    
     private static class DefaultSoulPluginChain implements SoulPluginChain {
-
+        
         private int index;
-
+        
         private final List<SoulPlugin> plugins;
-
+        
         /**
          * Instantiates a new Default soul plugin chain.
          *
@@ -85,7 +89,7 @@ public final class SoulWebHandler implements WebHandler {
         DefaultSoulPluginChain(final List<SoulPlugin> plugins) {
             this.plugins = plugins;
         }
-
+        
         /**
          * Delegate to the next {@code WebFilter} in the chain.
          *

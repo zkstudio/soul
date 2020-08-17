@@ -1,14 +1,18 @@
 package org.dromara.soul.admin.config;
 
+import com.alibaba.nacos.api.config.ConfigService;
 import org.I0Itec.zkclient.ZkClient;
 import org.dromara.soul.admin.listener.DataChangedListener;
 import org.dromara.soul.admin.listener.http.HttpLongPollingDataChangedListener;
+import org.dromara.soul.admin.listener.nacos.NacosDataChangedListener;
 import org.dromara.soul.admin.listener.websocket.WebsocketCollector;
 import org.dromara.soul.admin.listener.websocket.WebsocketDataChangedListener;
 import org.dromara.soul.admin.listener.zookeeper.ZookeeperDataChangedListener;
-import org.dromara.soul.configuration.zookeeper.ZookeeperConfiguration;
+import org.dromara.soul.admin.listener.zookeeper.ZookeeperDataInit;
+import org.dromara.soul.admin.service.SyncDataService;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
@@ -22,26 +26,31 @@ import org.springframework.web.socket.server.standard.ServerEndpointExporter;
  */
 @Configuration
 public class DataSyncConfiguration {
-
+    
     /**
      * http long polling(default strategy).
      */
     @Configuration
-    @ConditionalOnMissingBean(DataChangedListener.class)
-    @ConditionalOnProperty(name = "soul.sync.strategy", havingValue = "http")
-    @Import(HttpLongPollingDataChangedListener.class)
+    @ConditionalOnProperty(name = "soul.sync.http.enabled", havingValue = "true", matchIfMissing = true)
+    @EnableConfigurationProperties(HttpSyncProperties.class)
     static class HttpLongPollingListener {
-    }
 
+        @Bean
+        @ConditionalOnMissingBean(HttpLongPollingDataChangedListener.class)
+        public HttpLongPollingDataChangedListener httpLongPollingDataChangedListener(final HttpSyncProperties httpSyncProperties) {
+            return new HttpLongPollingDataChangedListener(httpSyncProperties);
+        }
+
+    }
+    
     /**
      * The type Zookeeper listener.
      */
     @Configuration
-    @ConditionalOnMissingBean(DataChangedListener.class)
-    @ConditionalOnProperty(name = "soul.sync.strategy", havingValue = "zookeeper")
+    @ConditionalOnProperty(prefix = "soul.sync.zookeeper", name = "url")
     @Import(ZookeeperConfiguration.class)
     static class ZookeeperListener {
-
+    
         /**
          * Config event listener data changed listener.
          *
@@ -49,49 +58,86 @@ public class DataSyncConfiguration {
          * @return the data changed listener
          */
         @Bean
-        public DataChangedListener dataChangedListener(final ZkClient zkClient) {
+        @ConditionalOnMissingBean(ZookeeperDataChangedListener.class)
+        public DataChangedListener zookeeperDataChangedListener(final ZkClient zkClient) {
             return new ZookeeperDataChangedListener(zkClient);
         }
+    
+        /**
+         * Zookeeper data init zookeeper data init.
+         *
+         * @param zkClient        the zk client
+         * @param syncDataService the sync data service
+         * @return the zookeeper data init
+         */
+        @Bean
+        @ConditionalOnMissingBean(ZookeeperDataInit.class)
+        public ZookeeperDataInit zookeeperDataInit(final ZkClient zkClient, final SyncDataService syncDataService) {
+            return new ZookeeperDataInit(zkClient, syncDataService);
+        }
     }
-
-
+    
     /**
-     * The WebsocketListener.
+     * The type Nacos listener.
      */
     @Configuration
-    @ConditionalOnMissingBean(DataChangedListener.class)
-    @ConditionalOnProperty(name = "soul.sync.strategy", havingValue = "websocket", matchIfMissing = true)
+    @ConditionalOnProperty(prefix = "soul.sync.nacos", name = "url")
+    @Import(NacosConfiguration.class)
+    static class NacosListener {
+    
+        /**
+         * Data changed listener data changed listener.
+         *
+         * @param configService the config service
+         * @return the data changed listener
+         */
+        @Bean
+        @ConditionalOnMissingBean(NacosDataChangedListener.class)
+        public DataChangedListener nacosDataChangedListener(final ConfigService configService) {
+            return new NacosDataChangedListener(configService);
+        }
+    }
+    
+    /**
+     * The WebsocketListener(default strategy).
+     */
+    @Configuration
+    @ConditionalOnProperty(name = "soul.sync.websocket.enabled", havingValue = "true", matchIfMissing = true)
+    @EnableConfigurationProperties(WebsocketSyncProperties.class)
     static class WebsocketListener {
-
+    
         /**
          * Config event listener data changed listener.
          *
          * @return the data changed listener
          */
         @Bean
-        public DataChangedListener dataChangedListener() {
+        @ConditionalOnMissingBean(WebsocketDataChangedListener.class)
+        public DataChangedListener websocketDataChangedListener() {
             return new WebsocketDataChangedListener();
         }
-
+    
         /**
          * Websocket collector websocket collector.
          *
          * @return the websocket collector
          */
         @Bean
+        @ConditionalOnMissingBean(WebsocketCollector.class)
         public WebsocketCollector websocketCollector() {
             return new WebsocketCollector();
         }
-
+    
         /**
          * Server endpoint exporter server endpoint exporter.
          *
          * @return the server endpoint exporter
          */
         @Bean
+        @ConditionalOnMissingBean(ServerEndpointExporter.class)
         public ServerEndpointExporter serverEndpointExporter() {
             return new ServerEndpointExporter();
         }
     }
-
 }
+

@@ -21,6 +21,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
+import org.dromara.soul.common.utils.GsonUtils;
 
 import java.io.Serializable;
 import java.util.List;
@@ -42,4 +43,8 @@ public class ConfigData<T> implements Serializable {
 
     private List<T> data;
 
+    @Override
+    public String toString() {
+        return GsonUtils.getInstance().toJson(this);
+    }
 }

@@ -25,7 +25,7 @@ import lombok.EqualsAndHashCode;
 import java.io.Serializable;
 
 /**
- * The type Dubbo register config.
+ * The type dubbo register config.
  *
  * @author xiaoyu
  */
@@ -34,4 +34,8 @@ import java.io.Serializable;
 public class DubboRegisterConfig implements Serializable {
 
     private String register;
+    
+    private String group;
+    
+    private String protocol;
 }

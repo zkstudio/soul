@@ -18,6 +18,7 @@
 
 package org.dromara.soul.common.config;
 
+import java.util.Properties;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -31,23 +32,17 @@ import java.io.Serializable;
 @Data
 @EqualsAndHashCode
 public class MonitorConfig implements Serializable {
-
-    private String url;
-
-    private String userName;
-
-    private String password;
-
-    private String database;
-
-    private String retentionPolicy = "autogen";
-
-    private Integer connectTimeout = 10;
-
-    private Integer readTimeout = 30;
-
-    private Integer writeTimeout = 10;
-
-    private Boolean gzip = false;
+    
+    private String metricsName;
+    
+    private String host;
+    
+    private Integer port;
+    
+    private Boolean async;
+    
+    private Integer threadCount;
+    
+    private Properties props;
 
 }

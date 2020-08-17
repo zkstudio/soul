@@ -26,40 +26,32 @@ import org.dromara.soul.test.dubbo.api.entity.DubboTest;
  * @author xiaoyu(Myth)
  */
 public interface DubboTestService {
-
+    
     /**
      * find by id.
+     * <p>
+     * body：{"id":"1223"}
      *
      * @param id id
      * @return DubboTest dubbo test
      */
     DubboTest findById(String id);
-
-
+    
     /**
      * Find all dubbo test.
      *
      * @return the dubbo test
      */
     DubboTest findAll();
-
-    /**
-     * Find by long dubbo test.
-     *
-     * @param id the id
-     * @return the dubbo test
-     */
-    String findByLong(Long id);
-
-
+    
     /**
      * Insert dubbo test.
+     *
+     * body :{"id":"122344","name":"xiaoyu"}
      *
      * @param dubboTest the dubbo test
      * @return the dubbo test
      */
     DubboTest insert(DubboTest dubboTest);
-
-
-
+    
 }

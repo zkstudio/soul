@@ -19,6 +19,7 @@
 
 package org.dromara.soul.common.utils;
 
+import com.google.common.base.Splitter;
 import org.springframework.util.AntPathMatcher;
 
 /**
@@ -27,46 +28,22 @@ import org.springframework.util.AntPathMatcher;
  * @author xiaoyu
  */
 public class PathMatchUtils {
-
+    
     private static final AntPathMatcher MATCHER = new AntPathMatcher();
-
-    /**
-     * The entry point of application.
-     *
-     * @param args the input arguments
-     */
-    public static void main(final String[] args) {
-        String ignoreUrls = "/login/login,/login/verifyCode,/open-api/findAllMetaData,/volapi/**,/gatewayauth/seller/byphone,/seoEsConfig/get,/noauth/**";
-        String noauth = "/noauth/findAllMetaData/ABC";
-        String login = "/login/login";
-        String tt = "/user/findById";
-        String volapi = "/volapi/add";
-        System.out.println(match(ignoreUrls, noauth));
-        System.out.println(match(ignoreUrls, login));
-        System.out.println(match(ignoreUrls, tt));
-        System.out.println(match(ignoreUrls, volapi));
-    }
-
+    
     /**
      * Match boolean.
      *
-     * @param ignoreUrls the ignore urls
-     * @param path       the path
+     * @param matchUrls the ignore urls
+     * @param path      the path
      * @return the boolean
      */
-    public static boolean match(final String ignoreUrls, final String path) {
-        String[] ignores = ignoreUrls.split(",");
-        for (String pattern : ignores) {
-            boolean match = reg(pattern, path);
-            if (match) {
-                return true;
-            }
-        }
-        return false;
+    public static boolean match(final String matchUrls, final String path) {
+        return Splitter.on(",").omitEmptyStrings().trimResults().splitToList(matchUrls).stream().anyMatch(url -> reg(url, path));
     }
-
+    
     private static boolean reg(final String pattern, final String path) {
         return MATCHER.match(pattern, path);
     }
-
+    
 }

@@ -40,8 +40,8 @@
     <dependencies>
         <dependency>
             <groupId>org.dromara</groupId>
-            <artifactId>soul-client-springmvc</artifactId>
-            <version>2.1.1-RELEASE</version>
+            <artifactId>soul-spring-boot-starter-client-springmvc</artifactId>
+            <version>${soul.version}</version>
         </dependency>
 
         <dependency>

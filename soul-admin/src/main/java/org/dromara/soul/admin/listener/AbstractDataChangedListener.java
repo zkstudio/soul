@@ -17,6 +17,7 @@
 
 package org.dromara.soul.admin.listener;
 
+import com.google.gson.reflect.TypeToken;
 import org.apache.commons.collections4.CollectionUtils;
 import org.dromara.soul.admin.service.AppAuthService;
 import org.dromara.soul.admin.service.MetaDataService;
@@ -40,12 +41,13 @@ import org.springframework.beans.factory.InitializingBean;
 import javax.annotation.Resource;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 
 /**
  * Abstract class for ConfigEventListener.
  * As we think that the md5 value of the in-memory data is the same as the md5 value of the database,
- * although it may be a little different, but it doesn't matter, we will have thread to periodically
+ * although it may be a little different, but it doesn't matter, we will have thread to periodica
  * pull the data in the database.
  *
  * @author huangxiaofeng
@@ -53,38 +55,38 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @SuppressWarnings("all")
 public abstract class AbstractDataChangedListener implements DataChangedListener, InitializingBean {
-
+    
     /**
      * The constant CACHE.
      */
-    protected static final ConcurrentHashMap<String, ConfigDataCache> CACHE = new ConcurrentHashMap<>();
-
+    protected static final ConcurrentMap<String, ConfigDataCache> CACHE = new ConcurrentHashMap<>();
+    
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractDataChangedListener.class);
-
+    
     @Resource
     private AppAuthService appAuthService;
-
+    
     /**
      * The Plugin service.
      */
     @Resource
     private PluginService pluginService;
-
+    
     /**
      * The Rule service.
      */
     @Resource
     private RuleService ruleService;
-
+    
     /**
      * The Selector service.
      */
     @Resource
     private SelectorService selectorService;
-
+    
     @Resource
     private MetaDataService metaDataService;
-
+    
     /**
      * fetch configuration from database.
      *
@@ -95,20 +97,30 @@ public abstract class AbstractDataChangedListener implements DataChangedListener
         ConfigDataCache config = CACHE.get(groupKey.name());
         switch (groupKey) {
             case APP_AUTH:
-                return new ConfigData<>(config.getMd5(), config.getLastModifyTime(), appAuthService.listAll());
+                List<AppAuthData> appAuthList = GsonUtils.getGson().fromJson(config.getJson(), new TypeToken<List<AppAuthData>>() {
+                }.getType());
+                return new ConfigData<>(config.getMd5(), config.getLastModifyTime(), appAuthList);
             case PLUGIN:
-                return new ConfigData<>(config.getMd5(), config.getLastModifyTime(), pluginService.listAll());
+                List<PluginData> pluginList = GsonUtils.getGson().fromJson(config.getJson(), new TypeToken<List<PluginData>>() {
+                }.getType());
+                return new ConfigData<>(config.getMd5(), config.getLastModifyTime(), pluginList);
             case RULE:
-                return new ConfigData<>(config.getMd5(), config.getLastModifyTime(), ruleService.listAll());
+                List<RuleData> ruleList = GsonUtils.getGson().fromJson(config.getJson(), new TypeToken<List<RuleData>>() {
+                }.getType());
+                return new ConfigData<>(config.getMd5(), config.getLastModifyTime(), ruleList);
             case SELECTOR:
-                return new ConfigData<>(config.getMd5(), config.getLastModifyTime(), selectorService.listAll());
+                List<SelectorData> selectorList = GsonUtils.getGson().fromJson(config.getJson(), new TypeToken<List<SelectorData>>() {
+                }.getType());
+                return new ConfigData<>(config.getMd5(), config.getLastModifyTime(), selectorList);
             case META_DATA:
-                return new ConfigData<>(config.getMd5(), config.getLastModifyTime(), metaDataService.listAll());
+                List<MetaData> metaList = GsonUtils.getGson().fromJson(config.getJson(), new TypeToken<List<MetaData>>() {
+                }.getType());
+                return new ConfigData<>(config.getMd5(), config.getLastModifyTime(), metaList);
             default:
                 throw new IllegalStateException("Unexpected groupKey: " + groupKey);
         }
     }
-
+    
     @Override
     public void onAppAuthChanged(final List<AppAuthData> changed, final DataEventTypeEnum eventType) {
         if (CollectionUtils.isEmpty(changed)) {
@@ -117,8 +129,7 @@ public abstract class AbstractDataChangedListener implements DataChangedListener
         this.updateAppAuthCache();
         this.afterAppAuthChanged(changed, eventType);
     }
-
-
+    
     @Override
     public void onMetaDataChanged(final List<MetaData> changed, final DataEventTypeEnum eventType) {
         if (CollectionUtils.isEmpty(changed)) {
@@ -127,8 +138,8 @@ public abstract class AbstractDataChangedListener implements DataChangedListener
         this.updateMetaDataCache();
         this.afterMetaDataChanged(changed, eventType);
     }
-
-
+    
+    
     /**
      * After meta data changed.
      *
@@ -137,7 +148,7 @@ public abstract class AbstractDataChangedListener implements DataChangedListener
      */
     protected void afterMetaDataChanged(final List<MetaData> changed, final DataEventTypeEnum eventType) {
     }
-
+    
     /**
      * After app auth changed.
      *
@@ -146,7 +157,7 @@ public abstract class AbstractDataChangedListener implements DataChangedListener
      */
     protected void afterAppAuthChanged(final List<AppAuthData> changed, final DataEventTypeEnum eventType) {
     }
-
+    
     @Override
     public void onPluginChanged(final List<PluginData> changed, final DataEventTypeEnum eventType) {
         if (CollectionUtils.isEmpty(changed)) {
@@ -155,7 +166,7 @@ public abstract class AbstractDataChangedListener implements DataChangedListener
         this.updatePluginCache();
         this.afterPluginChanged(changed, eventType);
     }
-
+    
     /**
      * After plugin changed.
      *
@@ -164,7 +175,7 @@ public abstract class AbstractDataChangedListener implements DataChangedListener
      */
     protected void afterPluginChanged(final List<PluginData> changed, final DataEventTypeEnum eventType) {
     }
-
+    
     @Override
     public void onRuleChanged(final List<RuleData> changed, final DataEventTypeEnum eventType) {
         if (CollectionUtils.isEmpty(changed)) {
@@ -173,7 +184,7 @@ public abstract class AbstractDataChangedListener implements DataChangedListener
         this.updateRuleCache();
         this.afterRuleChanged(changed, eventType);
     }
-
+    
     /**
      * After rule changed.
      *
@@ -182,7 +193,7 @@ public abstract class AbstractDataChangedListener implements DataChangedListener
      */
     protected void afterRuleChanged(final List<RuleData> changed, final DataEventTypeEnum eventType) {
     }
-
+    
     @Override
     public void onSelectorChanged(final List<SelectorData> changed, final DataEventTypeEnum eventType) {
         if (CollectionUtils.isEmpty(changed)) {
@@ -191,7 +202,7 @@ public abstract class AbstractDataChangedListener implements DataChangedListener
         this.updateSelectorCache();
         this.afterSelectorChanged(changed, eventType);
     }
-
+    
     /**
      * After selector changed.
      *
@@ -200,7 +211,7 @@ public abstract class AbstractDataChangedListener implements DataChangedListener
      */
     protected void afterSelectorChanged(final List<SelectorData> changed, final DataEventTypeEnum eventType) {
     }
-
+    
     @Override
     public final void afterPropertiesSet() {
         updateAppAuthCache();
@@ -208,71 +219,56 @@ public abstract class AbstractDataChangedListener implements DataChangedListener
         updateRuleCache();
         updateSelectorCache();
         updateMetaDataCache();
+        afterInitialize();
     }
 
+    protected abstract void afterInitialize();
+
+    /**
+     * if md5 is not the same as the original, then update lcoal cache.
+     * @param group ConfigGroupEnum
+     * @param data the new config data
+     */
+    protected <T> void updateCache(final ConfigGroupEnum group, final List<T> data) {
+        String json = GsonUtils.getInstance().toJson(data);
+        ConfigDataCache newVal = new ConfigDataCache(group.name(), json, Md5Utils.md5(json), System.currentTimeMillis());
+        ConfigDataCache oldVal = CACHE.put(newVal.getGroup(), newVal);
+        LOGGER.info("update config cache[{}], old:{}, updated:{}", group, oldVal, newVal);
+    }
+    
     /**
      * Update selector cache.
      */
     protected void updateSelectorCache() {
-        try {
-            String json = GsonUtils.getInstance().toJson(selectorService.listAll());
-            String group = ConfigGroupEnum.SELECTOR.name();
-            CACHE.put(group, new ConfigDataCache(group, Md5Utils.md5(json), System.currentTimeMillis()));
-        } catch (Exception e) {
-            LOGGER.warn("updateSelectorCache error.", e);
-        }
+        this.updateCache(ConfigGroupEnum.SELECTOR, selectorService.listAll());
     }
-
+    
     /**
      * Update rule cache.
      */
     protected void updateRuleCache() {
-        try {
-            String json = GsonUtils.getInstance().toJson(ruleService.listAll());
-            String group = ConfigGroupEnum.RULE.name();
-            CACHE.put(group, new ConfigDataCache(group, Md5Utils.md5(json), System.currentTimeMillis()));
-        } catch (Exception e) {
-            LOGGER.warn("updateRuleCache error.", e);
-        }
+        this.updateCache(ConfigGroupEnum.RULE, ruleService.listAll());
     }
-
+    
     /**
      * Update plugin cache.
      */
     protected void updatePluginCache() {
-        try {
-            String json = GsonUtils.getInstance().toJson(pluginService.listAll());
-            String group = ConfigGroupEnum.PLUGIN.name();
-            CACHE.put(group, new ConfigDataCache(group, Md5Utils.md5(json), System.currentTimeMillis()));
-        } catch (Exception e) {
-            LOGGER.warn("updatePluginCache error.", e);
-        }
+        this.updateCache(ConfigGroupEnum.PLUGIN, pluginService.listAll());
     }
-
+    
     /**
      * Update app auth cache.
      */
     protected void updateAppAuthCache() {
-        try {
-            String json = GsonUtils.getInstance().toJson(appAuthService.listAll());
-            String group = ConfigGroupEnum.APP_AUTH.name();
-            CACHE.put(group, new ConfigDataCache(group, Md5Utils.md5(json), System.currentTimeMillis()));
-        } catch (Exception e) {
-            LOGGER.warn("updateAppAuthCache error.", e);
-        }
+        this.updateCache(ConfigGroupEnum.APP_AUTH, appAuthService.listAll());
     }
-
+    
     /**
      * Update meta data cache.
      */
     protected void updateMetaDataCache() {
-        try {
-            String json = GsonUtils.getInstance().toJson(metaDataService.listAll());
-            String group = ConfigGroupEnum.META_DATA.name();
-            CACHE.put(group, new ConfigDataCache(group, Md5Utils.md5(json), System.currentTimeMillis()));
-        } catch (Exception e) {
-            LOGGER.warn("updateMetaDataCache error.", e);
-        }
+        this.updateCache(ConfigGroupEnum.META_DATA, metaDataService.listAll());
     }
-
+    
 }

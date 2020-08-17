@@ -30,17 +30,17 @@ import java.util.Objects;
 public enum DataEventTypeEnum {
 
     /**
-     * delete event
+     * delete event.
      */
     DELETE,
 
     /**
-     * insert event
+     * insert event.
      */
     CREATE,
 
     /**
-     * update event
+     * update event.
      */
     UPDATE,
 
@@ -65,6 +65,4 @@ public enum DataEventTypeEnum {
                 .filter(e -> Objects.equals(e.name(), name))
                 .findFirst().orElseThrow(() -> new SoulException(" this DataEventTypeEnum can not support!"));
     }
-
-
 }

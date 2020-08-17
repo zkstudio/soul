@@ -5,22 +5,28 @@ server:
 spring:
   application:
     name: springCloud-test
+#  cloud:
+#    nacos:
+#      discovery:
+#          server-addr: 127.0.0.1:8848
+
+
+springCloud-test:
+  ribbon.NFLoadBalancerRuleClassName: com.netflix.loadbalancer.RandomRule
+
 eureka:
   client:
     serviceUrl:
       defaultZone:  http://localhost:8761/eureka/
-  instance:
-    prefer-ip-address: true
 
-test-service:
-  ribbon.NFLoadBalancerRuleClassName: com.netflix.loadbalancer.RandomRule
+soul:
+  springcloud:
+    admin-url: http://localhost:9095
+    context-path: /springcloud
+
 
 logging:
   level:
     root: info
     org.dromara.soul: debug
   path: "./logs"
-soul:
-  springcloud:
-    admin-url: http://localhost:9095
-    context-path: /springcloud
